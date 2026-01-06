@@ -1,6 +1,6 @@
 # YouTube → Gemini Summary (Chrome Extension)
 
-Status: Production ready (v0.1.0)
+Status: Production ready (v0.1.1)
 
 ## What it does
 - Adds “🤖 Gemini ile özetle” button on YouTube video + Shorts cards.
@@ -23,7 +23,7 @@ Status: Production ready (v0.1.0)
 ## Options
 - Language: Stored setting for your prompt language; update the template accordingly.
 - Auto-send: Automatically clicks send after filling the prompt.
-- Open in new tab: Currently stored only; Gemini tab may be reused if already open.
+- Open in new tab: When enabled, always opens a new Gemini tab.
 - Hover-only: Show the button only on hover.
 - Send delay: Wait time before clicking send (0-2000ms).
 - Prompt template: Uses `{title}`, `{channel}`, `{url}` placeholders.

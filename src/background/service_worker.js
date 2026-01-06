@@ -2,6 +2,7 @@ const LOG_PREFIX = "[YT→Gemini]";
 const GEMINI_APP_URL = "https://gemini.google.com/app";
 const GEMINI_MATCH_PATTERN = "https://gemini.google.com/*";
 const PENDING_KEY = "pendingPrompt";
+const SETTINGS_KEY = "settings";
 const REQUEST_TIMEOUT_MS = 15000;
 const MENU_ID = "yt-gemini-summary-link";
 
@@ -64,6 +65,36 @@ function storageSet(values) {
       reject(error);
     }
   });
+}
+
+function storageGet(key) {
+  return new Promise((resolve, reject) => {
+    try {
+      chrome.storage.local.get(key, (result) => {
+        const error = chrome.runtime?.lastError;
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve(result || {});
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+async function getSettings() {
+  try {
+    const result = await storageGet(SETTINGS_KEY);
+    const stored = result?.[SETTINGS_KEY];
+    if (stored && typeof stored === "object") {
+      return stored;
+    }
+  } catch (error) {
+    logWarn("Failed to read settings; using defaults.", error);
+  }
+  return {};
 }
 
 function tabsQuery(queryInfo) {
@@ -231,8 +262,17 @@ async function openGeminiForPayload(payload) {
   await setPendingPrompt(pending);
 
   let tab;
+  let settings = {};
   try {
-    tab = await getOrCreateGeminiTab();
+    settings = await getSettings();
+  } catch (error) {
+    logWarn("Failed to load settings for tab behavior.", error);
+  }
+  const openInNewTab = settings?.openInNewTab !== false;
+  try {
+    tab = openInNewTab
+      ? await tabsCreate({ url: GEMINI_APP_URL, active: true })
+      : await getOrCreateGeminiTab();
   } catch (error) {
     logWarn("Failed to open Gemini tab.", error);
     return;
