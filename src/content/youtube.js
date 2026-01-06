@@ -11,11 +11,58 @@
   const CARD_CLASS = "gemini-summary-card";
   const DATASET_FLAG = "geminiSummaryInjected";
   const SETTINGS_KEY = "settings";
-  const DEFAULT_SETTINGS = { showButtonOnHoverOnly: true };
+  const LABELS = {
+    tr: "🤖 Gemini ile özetle",
+    en: "🤖 Summarize with Gemini",
+  };
   const THROTTLE_MS = 200;
 
   const logWarn = (...args) => console.warn(LOG_PREFIX, ...args);
   const logError = (...args) => console.error(LOG_PREFIX, ...args);
+
+  const getChromeLanguage = () => {
+    try {
+      const uiLanguage =
+        chrome?.i18n?.getUILanguage?.() ||
+        navigator?.language ||
+        navigator?.languages?.[0] ||
+        "";
+      return String(uiLanguage).toLowerCase();
+    } catch (error) {
+      return "";
+    }
+  };
+
+  const normalizeLanguage = (value) => (value === "tr" ? "tr" : "en");
+  const getDefaultLanguage = () =>
+    normalizeLanguage(
+      getChromeLanguage().startsWith("tr") ? "tr" : "en"
+    );
+
+  let currentLanguage = getDefaultLanguage();
+  const DEFAULT_SETTINGS = {
+    showButtonOnHoverOnly: true,
+    language: currentLanguage,
+  };
+
+  const getButtonLabel = (language) => LABELS[language] || LABELS.en;
+
+  const updateButtonLabels = (language) => {
+    const label = getButtonLabel(language);
+    document.querySelectorAll(`.${BUTTON_CLASS}`).forEach((button) => {
+      if (!(button instanceof HTMLElement)) {
+        return;
+      }
+      button.textContent = label;
+      button.setAttribute("aria-label", label);
+    });
+  };
+
+  const updateLanguage = (language) => {
+    const normalized = normalizeLanguage(language);
+    currentLanguage = normalized;
+    updateButtonLabels(normalized);
+  };
 
   const throttle = (fn, wait) => {
     let timeoutId = null;
@@ -41,7 +88,7 @@
   const getSettings = () =>
     new Promise((resolve) => {
       if (!chrome?.storage?.local) {
-        resolve({ ...DEFAULT_SETTINGS });
+        resolve({ ...DEFAULT_SETTINGS, language: currentLanguage });
         return;
       }
       try {
@@ -49,7 +96,7 @@
           const error = chrome.runtime?.lastError;
           if (error) {
             logWarn("Failed to read settings; using defaults.", error);
-            resolve({ ...DEFAULT_SETTINGS });
+            resolve({ ...DEFAULT_SETTINGS, language: currentLanguage });
             return;
           }
           const stored = result?.[SETTINGS_KEY];
@@ -57,11 +104,11 @@
             resolve({ ...DEFAULT_SETTINGS, ...stored });
             return;
           }
-          resolve({ ...DEFAULT_SETTINGS });
+          resolve({ ...DEFAULT_SETTINGS, language: currentLanguage });
         });
       } catch (error) {
         logWarn("Failed to read settings; using defaults.", error);
-        resolve({ ...DEFAULT_SETTINGS });
+        resolve({ ...DEFAULT_SETTINGS, language: currentLanguage });
       }
     });
 
@@ -182,8 +229,9 @@
     const button = document.createElement("button");
     button.type = "button";
     button.className = BUTTON_CLASS;
-    button.textContent = "🤖 Gemini ile özetle";
-    button.setAttribute("aria-label", "Gemini ile özetle");
+    const label = getButtonLabel(currentLanguage);
+    button.textContent = label;
+    button.setAttribute("aria-label", label);
     button.addEventListener("click", (event) => {
       try {
         event.preventDefault();
@@ -244,7 +292,10 @@
   }
 
   getSettings()
-    .then((settings) => applyHoverMode(settings.showButtonOnHoverOnly))
+    .then((settings) => {
+      applyHoverMode(settings.showButtonOnHoverOnly);
+      updateLanguage(settings.language);
+    })
     .catch((error) => {
       logWarn("Failed to apply hover mode from settings.", error);
       applyHoverMode(DEFAULT_SETTINGS.showButtonOnHoverOnly);
@@ -265,6 +316,9 @@
             )
           ) {
             applyHoverMode(updated.showButtonOnHoverOnly);
+          }
+          if (Object.prototype.hasOwnProperty.call(updated, "language")) {
+            updateLanguage(updated.language);
           }
         }
       } catch (error) {

@@ -5,7 +5,7 @@
   const EDITOR_SELECTOR =
     '.ql-editor.textarea.new-input-ui[contenteditable="true"]';
   const SEND_BUTTON_SELECTOR = "button.send-button.submit";
-  const DEFAULT_PROMPT_TEMPLATE = `Bu YouTube videosunu Türkçe özetle.
+  const DEFAULT_PROMPT_TEMPLATE_TR = `Bu YouTube videosunu Türkçe özetle.
 Başlık: {title}
 Kanal: {channel}
 URL: {url}
@@ -14,10 +14,42 @@ Format:
 - 8-12 madde özet
 - 3 ana çıkarım
 - Eğer öğreticiyse: adım adım yapılacaklar`;
+  const DEFAULT_PROMPT_TEMPLATE_EN = `Summarize this YouTube video in English.
+Title: {title}
+Channel: {channel}
+URL: {url}
+
+Format:
+- 8-12 bullet summary
+- 3 key takeaways
+- If it's a tutorial: step-by-step action items`;
+
+  const getDefaultLanguage = () => {
+    try {
+      const uiLanguage =
+        chrome?.i18n?.getUILanguage?.() ||
+        navigator?.language ||
+        navigator?.languages?.[0] ||
+        "";
+      const normalized = String(uiLanguage).toLowerCase();
+      if (normalized.startsWith("tr")) {
+        return "tr";
+      }
+    } catch (error) {
+      // Fallback below.
+    }
+    return "en";
+  };
+
+  const getDefaultPromptTemplate = (language) =>
+    language === "tr" ? DEFAULT_PROMPT_TEMPLATE_TR : DEFAULT_PROMPT_TEMPLATE_EN;
+
+  const defaultLanguage = getDefaultLanguage();
   const DEFAULT_SETTINGS = {
+    language: defaultLanguage,
     autoSend: true,
     sendDelayMs: 150,
-    promptTemplate: DEFAULT_PROMPT_TEMPLATE,
+    promptTemplate: getDefaultPromptTemplate(defaultLanguage),
   };
 
   let delivering = false;
@@ -80,9 +112,12 @@ Format:
     await storageRemove(PENDING_KEY);
   };
 
-  const renderTemplate = (template, data) => {
+  const renderTemplate = (template, data, language) => {
+    const resolvedLanguage = language === "tr" ? "tr" : defaultLanguage;
     const safeTemplate =
-      typeof template === "string" ? template : DEFAULT_PROMPT_TEMPLATE;
+      typeof template === "string" && template.trim().length > 0
+        ? template
+        : getDefaultPromptTemplate(resolvedLanguage);
     const safeData = {
       url: data?.url ?? "",
       title: data?.title ?? "",
@@ -190,7 +225,11 @@ Format:
       return;
     }
 
-    const prompt = renderTemplate(settings.promptTemplate, pending);
+    const prompt = renderTemplate(
+      settings.promptTemplate,
+      pending,
+      settings.language
+    );
     writeToEditor(editor, prompt);
 
     if (!settings.autoSend) {

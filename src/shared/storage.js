@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, PENDING_KEY, SETTINGS_KEY } from "./constants.js";
+import { getDefaultSettings, PENDING_KEY, SETTINGS_KEY } from "./constants.js";
 
 function storageGet(key) {
   if (!chrome?.storage?.local) {
@@ -68,24 +68,26 @@ function normalizeObject(value) {
 }
 
 export async function getSettings() {
+  const defaults = getDefaultSettings();
   try {
     const result = await storageGet(SETTINGS_KEY);
     const stored = normalizeObject(result[SETTINGS_KEY]);
-    return { ...DEFAULT_SETTINGS, ...stored };
+    return { ...defaults, ...stored };
   } catch (error) {
-    return { ...DEFAULT_SETTINGS };
+    return { ...defaults };
   }
 }
 
 export async function setSettings(partial) {
   const updates = normalizeObject(partial);
+  const defaults = getDefaultSettings();
   try {
     const current = await getSettings();
     const merged = { ...current, ...updates };
     await storageSet({ [SETTINGS_KEY]: merged });
     return merged;
   } catch (error) {
-    const merged = { ...DEFAULT_SETTINGS, ...updates };
+    const merged = { ...defaults, ...updates };
     return merged;
   }
 }

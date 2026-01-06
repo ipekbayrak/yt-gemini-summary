@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS } from "../shared/constants.js";
+import { getDefaultSettings } from "../shared/constants.js";
 import { getSettings, setSettings } from "../shared/storage.js";
 
 const form = document.getElementById("options-form");
@@ -28,32 +28,36 @@ const showStatus = (message) => {
 
 const sanitizeLanguage = (value) => (value === "en" ? "en" : "tr");
 
-const normalizeDelay = (value) => {
+const normalizeDelay = (value, fallback) => {
   const parsed = Number.parseInt(value, 10);
   if (Number.isNaN(parsed)) {
-    return DEFAULT_SETTINGS.sendDelayMs;
+    return fallback;
   }
   return clamp(parsed, 0, 2000);
 };
 
 const populateForm = (settings) => {
-  const safe = { ...DEFAULT_SETTINGS, ...(settings || {}) };
+  const defaults = getDefaultSettings();
+  const safe = { ...defaults, ...(settings || {}) };
   languageInput.value = sanitizeLanguage(safe.language);
   autoSendInput.checked = Boolean(safe.autoSend);
   openInNewTabInput.checked = Boolean(safe.openInNewTab);
   hoverOnlyInput.checked = Boolean(safe.showButtonOnHoverOnly);
-  sendDelayInput.value = normalizeDelay(safe.sendDelayMs);
-  promptTemplateInput.value = safe.promptTemplate || DEFAULT_SETTINGS.promptTemplate;
+  sendDelayInput.value = normalizeDelay(safe.sendDelayMs, defaults.sendDelayMs);
+  promptTemplateInput.value = safe.promptTemplate || defaults.promptTemplate;
 };
 
-const readForm = () => ({
-  language: sanitizeLanguage(languageInput.value),
-  autoSend: autoSendInput.checked,
-  openInNewTab: openInNewTabInput.checked,
-  showButtonOnHoverOnly: hoverOnlyInput.checked,
-  sendDelayMs: normalizeDelay(sendDelayInput.value),
-  promptTemplate: promptTemplateInput.value || DEFAULT_SETTINGS.promptTemplate,
-});
+const readForm = () => {
+  const defaults = getDefaultSettings();
+  return {
+    language: sanitizeLanguage(languageInput.value),
+    autoSend: autoSendInput.checked,
+    openInNewTab: openInNewTabInput.checked,
+    showButtonOnHoverOnly: hoverOnlyInput.checked,
+    sendDelayMs: normalizeDelay(sendDelayInput.value, defaults.sendDelayMs),
+    promptTemplate: promptTemplateInput.value || defaults.promptTemplate,
+  };
+};
 
 const handleSave = async (event) => {
   event.preventDefault();
@@ -64,8 +68,9 @@ const handleSave = async (event) => {
 };
 
 const handleReset = async () => {
-  await setSettings(DEFAULT_SETTINGS);
-  populateForm(DEFAULT_SETTINGS);
+  const defaults = getDefaultSettings();
+  await setSettings(defaults);
+  populateForm(defaults);
   showStatus("Reset to defaults");
 };
 
@@ -76,4 +81,4 @@ const init = async () => {
 
 form.addEventListener("submit", handleSave);
 resetButton.addEventListener("click", handleReset);
-init().catch(() => populateForm(DEFAULT_SETTINGS));
+init().catch(() => populateForm(getDefaultSettings()));
