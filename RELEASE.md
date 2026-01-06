@@ -11,6 +11,7 @@ Include:
 - `manifest.json`
 - `src/`
 - `assets/`
+- `_locales/`
 - `README.md`
 - `PRIVACY.md`
 - `TEST_CHECKLIST.md`
@@ -25,7 +26,7 @@ Example:
 
 ```bash
 zip -r yt-gemini-summary-v0.1.0.zip \
-  manifest.json src assets README.md PRIVACY.md TEST_CHECKLIST.md RELEASE.md \
+  manifest.json src assets _locales README.md PRIVACY.md TEST_CHECKLIST.md RELEASE.md \
   -x ".git/*" "node_modules/*"
 ```
 

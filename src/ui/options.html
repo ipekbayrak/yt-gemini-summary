@@ -3,34 +3,43 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>yt-gemini-summary Options</title>
+    <title data-i18n="optionsTitle">yt-gemini-summary Options</title>
     <link rel="stylesheet" href="options.css" />
     <script defer type="module" src="options.js"></script>
   </head>
   <body>
     <main class="container">
       <header>
-        <h1>YouTube → Gemini Summary</h1>
-        <p>Configure how prompts are generated and sent to Gemini.</p>
+        <h1 data-i18n="optionsHeading">YouTube → Gemini Summary</h1>
+        <p data-i18n="optionsSubtitle">
+          Configure how prompts are generated and sent to Gemini.
+        </p>
       </header>
 
       <form id="options-form">
         <section class="field">
-          <label for="language">Language</label>
+          <label for="language" data-i18n="labelLanguage">Language</label>
           <select id="language" name="language">
-            <option value="tr">Turkish</option>
-            <option value="en">English</option>
+            <option value="en" data-i18n="languageEnglish">English</option>
+            <option value="es" data-i18n="languageSpanish">Spanish</option>
+            <option value="hi" data-i18n="languageHindi">Hindi</option>
+            <option value="ar" data-i18n="languageArabic">Arabic</option>
+            <option value="tr" data-i18n="languageTurkish">Turkish</option>
           </select>
         </section>
 
         <section class="field checkbox-field">
           <input type="checkbox" id="autoSend" name="autoSend" />
-          <label for="autoSend">Auto-send prompt</label>
+          <label for="autoSend" data-i18n="labelAutoSend"
+            >Auto-send prompt</label
+          >
         </section>
 
         <section class="field checkbox-field">
           <input type="checkbox" id="openInNewTab" name="openInNewTab" />
-          <label for="openInNewTab">Open Gemini in new tab</label>
+          <label for="openInNewTab" data-i18n="labelOpenInNewTab"
+            >Open Gemini in new tab</label
+          >
         </section>
 
         <section class="field checkbox-field">
@@ -39,11 +48,15 @@
             id="showButtonOnHoverOnly"
             name="showButtonOnHoverOnly"
           />
-          <label for="showButtonOnHoverOnly">Show button only on hover</label>
+          <label for="showButtonOnHoverOnly" data-i18n="labelHoverOnly"
+            >Show button only on hover</label
+          >
         </section>
 
         <section class="field">
-          <label for="sendDelayMs">Send delay (ms)</label>
+          <label for="sendDelayMs" data-i18n="labelSendDelay"
+            >Send delay (ms)</label
+          >
           <input
             type="number"
             id="sendDelayMs"
@@ -52,22 +65,43 @@
             max="2000"
             step="50"
           />
-          <small>Range: 0–2000ms.</small>
+          <small data-i18n="helpSendDelayRange">Range: 0–2000ms.</small>
         </section>
 
         <section class="field">
-          <label for="promptTemplate">Prompt template</label>
+          <label for="promptTemplate" data-i18n="labelPromptTemplate"
+            >Prompt template</label
+          >
+          <small>
+            <span data-i18n="helpPromptTemplateIntro">Use placeholders:</span>
+            <code>{title}</code>, <code>{channel}</code>, <code>{url}</code>.
+            <span data-i18n="helpPromptTemplateOutro"
+              >You can write multiple lines.</span
+            >
+          </small>
           <textarea
             id="promptTemplate"
             name="promptTemplate"
             rows="10"
           ></textarea>
+          <div class="template-example">
+            <span data-i18n="templateExampleLabel">Example:</span>
+            <pre id="templateExampleBody">Summarize this YouTube video.
+Title: {title}
+Channel: {channel}
+URL: {url}</pre>
+          </div>
         </section>
 
         <div class="actions">
-          <button type="submit" id="saveButton">Save</button>
-          <button type="button" id="resetButton">Reset</button>
+          <button type="submit" id="saveButton" data-i18n="buttonSave">
+            Save
+          </button>
+          <button type="button" id="resetButton" data-i18n="buttonReset">
+            Reset
+          </button>
           <span id="status" class="status" role="status" aria-live="polite"
+            data-i18n="statusSaved"
             >Saved</span
           >
         </div>

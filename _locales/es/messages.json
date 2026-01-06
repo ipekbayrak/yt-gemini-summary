@@ -1,0 +1,28 @@
+{
+  "appName": { "message": "Resumen de YouTube → Gemini" },
+  "appDescription": { "message": "Resume videos de YouTube con Gemini." },
+  "optionsTitle": { "message": "Opciones de YouTube → Gemini Summary" },
+  "optionsHeading": { "message": "YouTube → Gemini Summary" },
+  "optionsSubtitle": {
+    "message": "Configura cómo se generan y se envían los prompts a Gemini."
+  },
+  "labelLanguage": { "message": "Idioma" },
+  "languageEnglish": { "message": "Inglés" },
+  "languageSpanish": { "message": "Español" },
+  "languageHindi": { "message": "Hindi" },
+  "languageArabic": { "message": "Árabe" },
+  "languageTurkish": { "message": "Turco" },
+  "labelAutoSend": { "message": "Enviar automáticamente el prompt" },
+  "labelOpenInNewTab": { "message": "Abrir Gemini en una nueva pestaña" },
+  "labelHoverOnly": { "message": "Mostrar el botón solo al pasar el cursor" },
+  "labelSendDelay": { "message": "Retraso de envío (ms)" },
+  "helpSendDelayRange": { "message": "Rango: 0–2000 ms." },
+  "labelPromptTemplate": { "message": "Plantilla de prompt" },
+  "helpPromptTemplateIntro": { "message": "Usa marcadores:" },
+  "helpPromptTemplateOutro": { "message": "Puedes escribir varias líneas." },
+  "templateExampleLabel": { "message": "Ejemplo:" },
+  "buttonSave": { "message": "Guardar" },
+  "buttonReset": { "message": "Restablecer" },
+  "statusSaved": { "message": "Guardado" },
+  "statusReset": { "message": "Restablecido a valores predeterminados" }
+}

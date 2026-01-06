@@ -1,0 +1,28 @@
+{
+  "appName": { "message": "ملخص YouTube → Gemini" },
+  "appDescription": { "message": "لخّص فيديوهات YouTube باستخدام Gemini." },
+  "optionsTitle": { "message": "خيارات YouTube → Gemini Summary" },
+  "optionsHeading": { "message": "YouTube → Gemini Summary" },
+  "optionsSubtitle": {
+    "message": "اضبط كيفية إنشاء التعليمات وإرسالها إلى Gemini."
+  },
+  "labelLanguage": { "message": "اللغة" },
+  "languageEnglish": { "message": "الإنجليزية" },
+  "languageSpanish": { "message": "الإسبانية" },
+  "languageHindi": { "message": "الهندية" },
+  "languageArabic": { "message": "العربية" },
+  "languageTurkish": { "message": "التركية" },
+  "labelAutoSend": { "message": "إرسال التعليمات تلقائيًا" },
+  "labelOpenInNewTab": { "message": "افتح Gemini في علامة تبويب جديدة" },
+  "labelHoverOnly": { "message": "أظهر الزر عند المرور فقط" },
+  "labelSendDelay": { "message": "تأخير الإرسال (مللي ثانية)" },
+  "helpSendDelayRange": { "message": "النطاق: 0–2000 مللي ثانية." },
+  "labelPromptTemplate": { "message": "قالب التعليمات" },
+  "helpPromptTemplateIntro": { "message": "استخدم العناصر النائبة:" },
+  "helpPromptTemplateOutro": { "message": "يمكنك كتابة عدة أسطر." },
+  "templateExampleLabel": { "message": "مثال:" },
+  "buttonSave": { "message": "حفظ" },
+  "buttonReset": { "message": "إعادة تعيين" },
+  "statusSaved": { "message": "تم الحفظ" },
+  "statusReset": { "message": "تمت الإعادة إلى الإعدادات الافتراضية" }
+}

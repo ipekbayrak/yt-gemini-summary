@@ -1,9 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "YouTube → Gemini Summary",
+  "name": "__MSG_appName__",
+  "description": "__MSG_appDescription__",
   "version": "0.1.0",
   "permissions": ["tabs", "storage"],
   "host_permissions": ["https://www.youtube.com/*", "https://gemini.google.com/*"],
+  "default_locale": "en",
   "options_page": "src/ui/options.html",
   "icons": {
     "16": "assets/icon16.png",

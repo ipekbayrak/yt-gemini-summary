@@ -12,8 +12,11 @@
   const DATASET_FLAG = "geminiSummaryInjected";
   const SETTINGS_KEY = "settings";
   const LABELS = {
-    tr: "🤖 Gemini ile özetle",
     en: "🤖 Summarize with Gemini",
+    es: "🤖 Resumir con Gemini",
+    hi: "🤖 Gemini से सारांश",
+    ar: "🤖 لخص مع Gemini",
+    tr: "🤖 Gemini ile özetle",
   };
   const THROTTLE_MS = 200;
 
@@ -33,11 +36,16 @@
     }
   };
 
-  const normalizeLanguage = (value) => (value === "tr" ? "tr" : "en");
-  const getDefaultLanguage = () =>
-    normalizeLanguage(
-      getChromeLanguage().startsWith("tr") ? "tr" : "en"
-    );
+  const SUPPORTED_LANGUAGES = ["en", "es", "hi", "ar", "tr"];
+  const normalizeLanguage = (value) => {
+    if (!value) {
+      return "en";
+    }
+    const normalized = String(value).toLowerCase();
+    const base = normalized.split("-")[0];
+    return SUPPORTED_LANGUAGES.includes(base) ? base : "en";
+  };
+  const getDefaultLanguage = () => normalizeLanguage(getChromeLanguage());
 
   let currentLanguage = getDefaultLanguage();
   const DEFAULT_SETTINGS = {

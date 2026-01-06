@@ -1,0 +1,28 @@
+{
+  "appName": { "message": "YouTube → Gemini सारांश" },
+  "appDescription": { "message": "Gemini के साथ YouTube वीडियो का सारांश बनाएं।" },
+  "optionsTitle": { "message": "YouTube → Gemini सारांश विकल्प" },
+  "optionsHeading": { "message": "YouTube → Gemini सारांश" },
+  "optionsSubtitle": {
+    "message": "प्रॉम्प्ट कैसे बनाए और Gemini को भेजे जाएँ, इसे कॉन्फ़िगर करें।"
+  },
+  "labelLanguage": { "message": "भाषा" },
+  "languageEnglish": { "message": "अंग्रेज़ी" },
+  "languageSpanish": { "message": "स्पैनिश" },
+  "languageHindi": { "message": "हिन्दी" },
+  "languageArabic": { "message": "अरबी" },
+  "languageTurkish": { "message": "तुर्की" },
+  "labelAutoSend": { "message": "प्रॉम्प्ट स्वतः भेजें" },
+  "labelOpenInNewTab": { "message": "Gemini को नए टैब में खोलें" },
+  "labelHoverOnly": { "message": "बटन केवल होवर पर दिखाएं" },
+  "labelSendDelay": { "message": "भेजने में देरी (ms)" },
+  "helpSendDelayRange": { "message": "सीमा: 0–2000 ms." },
+  "labelPromptTemplate": { "message": "प्रॉम्प्ट टेम्पलेट" },
+  "helpPromptTemplateIntro": { "message": "प्लेसहोल्डर उपयोग करें:" },
+  "helpPromptTemplateOutro": { "message": "आप कई पंक्तियाँ लिख सकते हैं।" },
+  "templateExampleLabel": { "message": "उदाहरण:" },
+  "buttonSave": { "message": "सहेजें" },
+  "buttonReset": { "message": "रीसेट करें" },
+  "statusSaved": { "message": "सहेजा गया" },
+  "statusReset": { "message": "डिफ़ॉल्ट पर रीसेट किया गया" }
+}

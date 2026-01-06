@@ -23,7 +23,43 @@ Format:
 - 8-12 bullet summary
 - 3 key takeaways
 - If it's a tutorial: step-by-step action items`;
+  const DEFAULT_PROMPT_TEMPLATE_ES = `Resume este video de YouTube en español.
+Título: {title}
+Canal: {channel}
+URL: {url}
 
+Formato:
+- Resumen en 8-12 viñetas
+- 3 ideas principales
+- Si es un tutorial: pasos accionables`;
+  const DEFAULT_PROMPT_TEMPLATE_HI = `इस YouTube वीडियो का हिंदी में सारांश दें।
+शीर्षक: {title}
+चैनल: {channel}
+URL: {url}
+
+फ़ॉर्मैट:
+- 8-12 बुलेट में सारांश
+- 3 मुख्य निष्कर्ष
+- यदि यह ट्यूटोरियल है: चरण-दर-चरण कार्य`;
+  const DEFAULT_PROMPT_TEMPLATE_AR = `لخّص هذا الفيديو من YouTube بالعربية.
+العنوان: {title}
+القناة: {channel}
+الرابط: {url}
+
+التنسيق:
+- ملخص من 8-12 نقاط
+- 3 استنتاجات رئيسية
+- إذا كان تعليميًا: خطوات عملية`;
+
+  const SUPPORTED_LANGUAGES = ["en", "es", "hi", "ar", "tr"];
+  const normalizeLanguage = (value) => {
+    if (!value) {
+      return "en";
+    }
+    const normalized = String(value).toLowerCase();
+    const base = normalized.split("-")[0];
+    return SUPPORTED_LANGUAGES.includes(base) ? base : "en";
+  };
   const getDefaultLanguage = () => {
     try {
       const uiLanguage =
@@ -31,18 +67,28 @@ Format:
         navigator?.language ||
         navigator?.languages?.[0] ||
         "";
-      const normalized = String(uiLanguage).toLowerCase();
-      if (normalized.startsWith("tr")) {
-        return "tr";
-      }
+      return normalizeLanguage(uiLanguage);
     } catch (error) {
       // Fallback below.
     }
     return "en";
   };
 
-  const getDefaultPromptTemplate = (language) =>
-    language === "tr" ? DEFAULT_PROMPT_TEMPLATE_TR : DEFAULT_PROMPT_TEMPLATE_EN;
+  const getDefaultPromptTemplate = (language) => {
+    switch (normalizeLanguage(language)) {
+      case "tr":
+        return DEFAULT_PROMPT_TEMPLATE_TR;
+      case "es":
+        return DEFAULT_PROMPT_TEMPLATE_ES;
+      case "hi":
+        return DEFAULT_PROMPT_TEMPLATE_HI;
+      case "ar":
+        return DEFAULT_PROMPT_TEMPLATE_AR;
+      case "en":
+      default:
+        return DEFAULT_PROMPT_TEMPLATE_EN;
+    }
+  };
 
   const defaultLanguage = getDefaultLanguage();
   const DEFAULT_SETTINGS = {
@@ -113,7 +159,7 @@ Format:
   };
 
   const renderTemplate = (template, data, language) => {
-    const resolvedLanguage = language === "tr" ? "tr" : defaultLanguage;
+    const resolvedLanguage = normalizeLanguage(language || defaultLanguage);
     const safeTemplate =
       typeof template === "string" && template.trim().length > 0
         ? template

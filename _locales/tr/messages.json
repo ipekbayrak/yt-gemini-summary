@@ -1,0 +1,28 @@
+{
+  "appName": { "message": "YouTube → Gemini Summary" },
+  "appDescription": { "message": "Gemini ile YouTube videolarını özetleyin." },
+  "optionsTitle": { "message": "YouTube → Gemini Summary Ayarları" },
+  "optionsHeading": { "message": "YouTube → Gemini Summary" },
+  "optionsSubtitle": {
+    "message": "Promptların nasıl üretileceğini ve Gemini’ye gönderileceğini ayarlayın."
+  },
+  "labelLanguage": { "message": "Dil" },
+  "languageEnglish": { "message": "İngilizce" },
+  "languageSpanish": { "message": "İspanyolca" },
+  "languageHindi": { "message": "Hintçe" },
+  "languageArabic": { "message": "Arapça" },
+  "languageTurkish": { "message": "Türkçe" },
+  "labelAutoSend": { "message": "Promptu otomatik gönder" },
+  "labelOpenInNewTab": { "message": "Gemini’yi yeni sekmede aç" },
+  "labelHoverOnly": { "message": "Butonu sadece hover’da göster" },
+  "labelSendDelay": { "message": "Gönderme gecikmesi (ms)" },
+  "helpSendDelayRange": { "message": "Aralık: 0–2000 ms." },
+  "labelPromptTemplate": { "message": "Prompt şablonu" },
+  "helpPromptTemplateIntro": { "message": "Yer tutucuları kullanın:" },
+  "helpPromptTemplateOutro": { "message": "Birden fazla satır yazabilirsiniz." },
+  "templateExampleLabel": { "message": "Örnek:" },
+  "buttonSave": { "message": "Kaydet" },
+  "buttonReset": { "message": "Sıfırla" },
+  "statusSaved": { "message": "Kaydedildi" },
+  "statusReset": { "message": "Varsayılanlara sıfırlandı" }
+}

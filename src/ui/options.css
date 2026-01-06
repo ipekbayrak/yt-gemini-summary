@@ -43,6 +43,28 @@ header p {
   color: #64748b;
 }
 
+.template-example {
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 10px 12px;
+  color: #475569;
+  font-size: 12px;
+}
+
+.template-example span {
+  display: inline-block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.template-example pre {
+  margin: 0;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  white-space: pre-wrap;
+}
+
 .field input[type="number"],
 .field select,
 .field textarea {

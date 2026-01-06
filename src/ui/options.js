@@ -1,4 +1,8 @@
-import { getDefaultSettings } from "../shared/constants.js";
+import {
+  getDefaultPromptTemplate,
+  getDefaultSettings,
+  SUPPORTED_LANGUAGES,
+} from "../shared/constants.js";
 import { getSettings, setSettings } from "../shared/storage.js";
 
 const form = document.getElementById("options-form");
@@ -8,10 +12,36 @@ const openInNewTabInput = document.getElementById("openInNewTab");
 const hoverOnlyInput = document.getElementById("showButtonOnHoverOnly");
 const sendDelayInput = document.getElementById("sendDelayMs");
 const promptTemplateInput = document.getElementById("promptTemplate");
+const templateExampleBody = document.getElementById("templateExampleBody");
 const resetButton = document.getElementById("resetButton");
 const status = document.getElementById("status");
 
 let statusTimer = null;
+let lastLanguage = null;
+
+const getMessage = (key, fallback = "") =>
+  chrome?.i18n?.getMessage?.(key) || fallback;
+
+const applyLocalization = () => {
+  const uiLanguage = chrome?.i18n?.getUILanguage?.();
+  if (uiLanguage) {
+    document.documentElement.lang = uiLanguage;
+    document.documentElement.dir = uiLanguage.toLowerCase().startsWith("ar")
+      ? "rtl"
+      : "ltr";
+  }
+  const nodes = document.querySelectorAll("[data-i18n]");
+  nodes.forEach((node) => {
+    const key = node.getAttribute("data-i18n");
+    if (!key) {
+      return;
+    }
+    const message = getMessage(key);
+    if (message) {
+      node.textContent = message;
+    }
+  });
+};
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -26,7 +56,9 @@ const showStatus = (message) => {
   }, 1500);
 };
 
-const sanitizeLanguage = (value) => (value === "en" ? "en" : "tr");
+const SUPPORTED_LANGUAGE_SET = new Set(SUPPORTED_LANGUAGES);
+const sanitizeLanguage = (value) =>
+  SUPPORTED_LANGUAGE_SET.has(value) ? value : "en";
 
 const normalizeDelay = (value, fallback) => {
   const parsed = Number.parseInt(value, 10);
@@ -45,6 +77,8 @@ const populateForm = (settings) => {
   hoverOnlyInput.checked = Boolean(safe.showButtonOnHoverOnly);
   sendDelayInput.value = normalizeDelay(safe.sendDelayMs, defaults.sendDelayMs);
   promptTemplateInput.value = safe.promptTemplate || defaults.promptTemplate;
+  lastLanguage = sanitizeLanguage(safe.language);
+  updateTemplateExample(lastLanguage);
 };
 
 const readForm = () => {
@@ -59,26 +93,50 @@ const readForm = () => {
   };
 };
 
+const updateTemplateExample = (language) => {
+  if (!templateExampleBody) {
+    return;
+  }
+  templateExampleBody.textContent = getDefaultPromptTemplate(language);
+};
+
+const handleLanguageChange = () => {
+  const nextLanguage = sanitizeLanguage(languageInput.value);
+  const previousLanguage = lastLanguage;
+  const currentTemplate = promptTemplateInput.value.trim();
+  const previousDefault = previousLanguage
+    ? getDefaultPromptTemplate(previousLanguage)
+    : "";
+  if (!currentTemplate || (previousDefault && currentTemplate === previousDefault)) {
+    promptTemplateInput.value = getDefaultPromptTemplate(nextLanguage);
+  }
+  updateTemplateExample(nextLanguage);
+  lastLanguage = nextLanguage;
+};
+
 const handleSave = async (event) => {
   event.preventDefault();
   const payload = readForm();
   sendDelayInput.value = payload.sendDelayMs;
   await setSettings(payload);
-  showStatus("Saved");
+  showStatus(getMessage("statusSaved", "Saved"));
 };
 
 const handleReset = async () => {
   const defaults = getDefaultSettings();
   await setSettings(defaults);
   populateForm(defaults);
-  showStatus("Reset to defaults");
+  showStatus(getMessage("statusReset", "Reset to defaults"));
 };
 
 const init = async () => {
+  applyLocalization();
+  document.title = getMessage("optionsTitle", document.title);
   const settings = await getSettings();
   populateForm(settings);
 };
 
 form.addEventListener("submit", handleSave);
 resetButton.addEventListener("click", handleReset);
+languageInput.addEventListener("change", handleLanguageChange);
 init().catch(() => populateForm(getDefaultSettings()));

@@ -1,0 +1,28 @@
+{
+  "appName": { "message": "YouTube → Gemini Summary" },
+  "appDescription": { "message": "Summarize YouTube videos with Gemini." },
+  "optionsTitle": { "message": "YouTube → Gemini Summary Options" },
+  "optionsHeading": { "message": "YouTube → Gemini Summary" },
+  "optionsSubtitle": {
+    "message": "Configure how prompts are generated and sent to Gemini."
+  },
+  "labelLanguage": { "message": "Language" },
+  "languageEnglish": { "message": "English" },
+  "languageSpanish": { "message": "Spanish" },
+  "languageHindi": { "message": "Hindi" },
+  "languageArabic": { "message": "Arabic" },
+  "languageTurkish": { "message": "Turkish" },
+  "labelAutoSend": { "message": "Auto-send prompt" },
+  "labelOpenInNewTab": { "message": "Open Gemini in new tab" },
+  "labelHoverOnly": { "message": "Show button only on hover" },
+  "labelSendDelay": { "message": "Send delay (ms)" },
+  "helpSendDelayRange": { "message": "Range: 0–2000ms." },
+  "labelPromptTemplate": { "message": "Prompt template" },
+  "helpPromptTemplateIntro": { "message": "Use placeholders:" },
+  "helpPromptTemplateOutro": { "message": "You can write multiple lines." },
+  "templateExampleLabel": { "message": "Example:" },
+  "buttonSave": { "message": "Save" },
+  "buttonReset": { "message": "Reset" },
+  "statusSaved": { "message": "Saved" },
+  "statusReset": { "message": "Reset to defaults" }
+}
