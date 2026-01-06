@@ -1,0 +1,1 @@
+/* Gemini content script placeholder. */
