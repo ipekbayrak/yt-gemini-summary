@@ -1,8 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "yt-gemini-summary",
-  "version": "0.0.1",
-  "description": "TODO: summarize YouTube videos with Gemini",
+  "name": "YouTube → Gemini Summary",
+  "version": "0.1.0",
+  "permissions": ["tabs", "storage"],
+  "host_permissions": ["https://www.youtube.com/*", "https://gemini.google.com/*"],
+  "options_page": "src/ui/options.html",
   "icons": {
     "16": "assets/icon16.png",
     "48": "assets/icon48.png",
@@ -10,5 +12,16 @@
   },
   "background": {
     "service_worker": "src/background/service_worker.js"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["src/content/youtube.js"],
+      "css": ["src/content/youtube.css"]
+    },
+    {
+      "matches": ["https://gemini.google.com/*"],
+      "js": ["src/content/gemini.js"]
+    }
+  ]
 }
