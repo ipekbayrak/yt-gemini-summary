@@ -43,6 +43,7 @@ Status: Production ready (v0.1.0)
 - Issues and PRs are welcome.
 - Run through [TEST_CHECKLIST.md](TEST_CHECKLIST.md) before releases.
 - Packaging notes are in [RELEASE.md](RELEASE.md).
+- Built with ChatGPT 5.2 Codex.
 
 ## License
-No license file is included yet.
+MIT License. See [LICENSE](LICENSE).
