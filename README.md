@@ -1,5 +1,7 @@
 # YouTube → Gemini Summary
 
+Status: Production ready (v0.1.0)
+
 ## Ne yapar
 - YouTube video/shorts kartlarına “🤖 Gemini ile özetle” butonu ekler.
 - Başlık, kanal ve URL ile prompt oluşturur.
