@@ -1,4 +1,5 @@
 (() => {
+  const LOG_PREFIX = "[YT→Gemini]";
   const CARD_SELECTORS = [
     "ytd-rich-item-renderer",
     "ytd-video-renderer",
@@ -8,19 +9,31 @@
   ].join(",");
   const BUTTON_CLASS = "gemini-summary-btn";
   const CARD_CLASS = "gemini-summary-card";
+  const DATASET_FLAG = "geminiSummaryInjected";
   const SETTINGS_KEY = "settings";
   const DEFAULT_SETTINGS = { showButtonOnHoverOnly: true };
   const THROTTLE_MS = 200;
 
+  const logWarn = (...args) => console.warn(LOG_PREFIX, ...args);
+  const logError = (...args) => console.error(LOG_PREFIX, ...args);
+
   const throttle = (fn, wait) => {
     let timeoutId = null;
+    let pendingArgs = null;
     return (...args) => {
+      pendingArgs = args;
       if (timeoutId) {
         return;
       }
       timeoutId = setTimeout(() => {
         timeoutId = null;
-        fn(...args);
+        const argsToRun = pendingArgs;
+        pendingArgs = null;
+        try {
+          fn(...(argsToRun || []));
+        } catch (error) {
+          logWarn("Throttled task failed.", error);
+        }
       }, wait);
     };
   };
@@ -35,6 +48,7 @@
         chrome.storage.local.get(SETTINGS_KEY, (result) => {
           const error = chrome.runtime?.lastError;
           if (error) {
+            logWarn("Failed to read settings; using defaults.", error);
             resolve({ ...DEFAULT_SETTINGS });
             return;
           }
@@ -46,15 +60,20 @@
           resolve({ ...DEFAULT_SETTINGS });
         });
       } catch (error) {
+        logWarn("Failed to read settings; using defaults.", error);
         resolve({ ...DEFAULT_SETTINGS });
       }
     });
 
   const applyHoverMode = (enabled) => {
-    document.documentElement.classList.toggle(
-      "gemini-hover-only",
-      Boolean(enabled)
-    );
+    try {
+      document.documentElement.classList.toggle(
+        "gemini-hover-only",
+        Boolean(enabled)
+      );
+    } catch (error) {
+      logWarn("Failed to toggle hover mode.", error);
+    }
   };
 
   const extractUrl = (card) => {
@@ -147,7 +166,11 @@
   });
 
   const createButton = (card) => {
+    if (card.dataset[DATASET_FLAG] === "true") {
+      return;
+    }
     if (card.querySelector(`.${BUTTON_CLASS}`)) {
+      card.dataset[DATASET_FLAG] = "true";
       return;
     }
 
@@ -162,56 +185,90 @@
     button.textContent = "🤖 Gemini ile özetle";
     button.setAttribute("aria-label", "Gemini ile özetle");
     button.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (event.stopImmediatePropagation) {
-        event.stopImmediatePropagation();
+      try {
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.stopImmediatePropagation) {
+          event.stopImmediatePropagation();
+        }
+        const payload = buildPayload(card);
+        if (!payload.url) {
+          return;
+        }
+        chrome.runtime?.sendMessage?.({ type: "OPEN_GEMINI", payload }, () => {
+          const error = chrome.runtime?.lastError;
+          if (error) {
+            logWarn("Failed to send OPEN_GEMINI message.", error);
+          }
+        });
+      } catch (error) {
+        logError("Failed to handle summary click.", error);
       }
-      const payload = buildPayload(card);
-      if (!payload.url) {
-        return;
-      }
-      chrome.runtime?.sendMessage?.({ type: "OPEN_GEMINI", payload });
     });
 
     card.classList.add(CARD_CLASS);
     card.appendChild(button);
+    card.dataset[DATASET_FLAG] = "true";
   };
 
   const scanCards = () => {
-    document.querySelectorAll(CARD_SELECTORS).forEach((card) => {
-      if (!(card instanceof HTMLElement)) {
-        return;
-      }
-      if (card.querySelector(`.${BUTTON_CLASS}`)) {
-        return;
-      }
-      const url = extractUrl(card);
-      if (!url) {
-        return;
-      }
-      createButton(card);
-    });
+    try {
+      document.querySelectorAll(CARD_SELECTORS).forEach((card) => {
+        if (!(card instanceof HTMLElement)) {
+          return;
+        }
+        if (card.dataset[DATASET_FLAG] === "true") {
+          return;
+        }
+        if (card.querySelector(`.${BUTTON_CLASS}`)) {
+          card.dataset[DATASET_FLAG] = "true";
+          return;
+        }
+        const url = extractUrl(card);
+        if (!url) {
+          return;
+        }
+        createButton(card);
+      });
+    } catch (error) {
+      logWarn("Failed to scan YouTube cards.", error);
+    }
   };
 
   const scheduleScan = throttle(scanCards, THROTTLE_MS);
   const observer = new MutationObserver(() => scheduleScan());
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  try {
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+  } catch (error) {
+    logWarn("Failed to observe DOM mutations.", error);
+  }
 
   getSettings()
     .then((settings) => applyHoverMode(settings.showButtonOnHoverOnly))
-    .catch(() => applyHoverMode(DEFAULT_SETTINGS.showButtonOnHoverOnly));
+    .catch((error) => {
+      logWarn("Failed to apply hover mode from settings.", error);
+      applyHoverMode(DEFAULT_SETTINGS.showButtonOnHoverOnly);
+    });
 
   if (chrome?.storage?.onChanged) {
     chrome.storage.onChanged.addListener((changes, areaName) => {
-      if (areaName !== "local") {
-        return;
-      }
-      const updated = changes?.[SETTINGS_KEY]?.newValue;
-      if (updated && typeof updated === "object") {
-        if (Object.prototype.hasOwnProperty.call(updated, "showButtonOnHoverOnly")) {
-          applyHoverMode(updated.showButtonOnHoverOnly);
+      try {
+        if (areaName !== "local") {
+          return;
         }
+        const updated = changes?.[SETTINGS_KEY]?.newValue;
+        if (updated && typeof updated === "object") {
+          if (
+            Object.prototype.hasOwnProperty.call(
+              updated,
+              "showButtonOnHoverOnly"
+            )
+          ) {
+            applyHoverMode(updated.showButtonOnHoverOnly);
+          }
+        }
+      } catch (error) {
+        logWarn("Failed to handle settings change.", error);
       }
     });
   }

@@ -1,4 +1,5 @@
 (() => {
+  const LOG_PREFIX = "[YT→Gemini]";
   const SETTINGS_KEY = "settings";
   const PENDING_KEY = "pendingPrompt";
   const EDITOR_SELECTOR =
@@ -22,6 +23,9 @@ Format:
   let delivering = false;
   let queuedOptions = null;
 
+  const logInfo = (...args) => console.info(LOG_PREFIX, ...args);
+  const logWarn = (...args) => console.warn(LOG_PREFIX, ...args);
+
   const storageGet = (key) =>
     new Promise((resolve) => {
       if (!chrome?.storage?.local) {
@@ -32,12 +36,14 @@ Format:
         chrome.storage.local.get(key, (result) => {
           const error = chrome.runtime?.lastError;
           if (error) {
+            logWarn("Failed to read storage key.", error);
             resolve({});
             return;
           }
           resolve(result || {});
         });
       } catch (error) {
+        logWarn("Failed to read storage key.", error);
         resolve({});
       }
     });
@@ -51,6 +57,7 @@ Format:
       try {
         chrome.storage.local.remove(key, () => resolve());
       } catch (error) {
+        logWarn("Failed to remove storage key.", error);
         resolve();
       }
     });
@@ -73,34 +80,34 @@ Format:
     await storageRemove(PENDING_KEY);
   };
 
-  const escapeHtml = (value) =>
-    value
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-
   const renderTemplate = (template, data) => {
+    const safeTemplate =
+      typeof template === "string" ? template : DEFAULT_PROMPT_TEMPLATE;
     const safeData = {
       url: data?.url ?? "",
       title: data?.title ?? "",
       channel: data?.channel ?? "",
     };
-    return template.replace(
+    return safeTemplate.replace(
       /\{(url|title|channel)\}/g,
       (_, key) => safeData[key] ?? ""
     );
   };
 
-  const promptToHtml = (prompt) => {
-    const normalized = prompt.replace(/\r\n/g, "\n");
+  const buildPromptFragment = (prompt) => {
+    const fragment = document.createDocumentFragment();
+    const normalized = prompt.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
     const lines = normalized.split("\n");
-    return lines
-      .map((line) =>
-        line.length === 0 ? "<p><br></p>" : `<p>${escapeHtml(line)}</p>`
-      )
-      .join("");
+    lines.forEach((line) => {
+      const paragraph = document.createElement("p");
+      if (line.length === 0) {
+        paragraph.appendChild(document.createElement("br"));
+      } else {
+        paragraph.textContent = line;
+      }
+      fragment.appendChild(paragraph);
+    });
+    return fragment;
   };
 
   const waitForEditor = (attempts = 5, intervalMs = 300) =>
@@ -123,25 +130,38 @@ Format:
     });
 
   const writeToEditor = (editor, prompt) => {
-    editor.innerHTML = promptToHtml(prompt);
-    editor.dispatchEvent(new Event("input", { bubbles: true }));
-    editor.dispatchEvent(new Event("change", { bubbles: true }));
+    try {
+      const fragment = buildPromptFragment(prompt);
+      while (editor.firstChild) {
+        editor.removeChild(editor.firstChild);
+      }
+      editor.appendChild(fragment);
+      editor.dispatchEvent(new Event("input", { bubbles: true }));
+      editor.dispatchEvent(new Event("change", { bubbles: true }));
+    } catch (error) {
+      logWarn("Failed to write to Gemini editor.", error);
+    }
   };
 
   const attemptSend = (sendDelayMs, retries) =>
     new Promise((resolve) => {
       const tryClick = (remaining) => {
-        const button = document.querySelector(SEND_BUTTON_SELECTOR);
-        if (button && button.getAttribute("aria-disabled") !== "true") {
-          button.click();
-          resolve(true);
-          return;
-        }
-        if (remaining <= 0) {
+        try {
+          const button = document.querySelector(SEND_BUTTON_SELECTOR);
+          if (button && button.getAttribute("aria-disabled") !== "true") {
+            button.click();
+            resolve(true);
+            return;
+          }
+          if (remaining <= 0) {
+            resolve(false);
+            return;
+          }
+          setTimeout(() => tryClick(remaining - 1), 300);
+        } catch (error) {
+          logWarn("Failed to click Gemini send button.", error);
           resolve(false);
-          return;
         }
-        setTimeout(() => tryClick(remaining - 1), 300);
       };
 
       setTimeout(() => tryClick(retries), sendDelayMs);
@@ -155,18 +175,18 @@ Format:
 
     const pending = await getPending();
     if (!pending) {
-      console.info("No pending prompt found for Gemini.");
+      logInfo("No pending prompt found for Gemini.");
       return;
     }
 
     if (expectedId && pending.id && expectedId !== pending.id) {
-      console.info("Pending prompt ID mismatch; ignoring delivery.");
+      logInfo("Pending prompt ID mismatch; ignoring delivery.");
       return;
     }
 
     const editor = await waitForEditor();
     if (!editor) {
-      console.warn("Gemini editor not found; pending prompt retained.");
+      logWarn("Gemini editor not found; pending prompt retained.");
       return;
     }
 
@@ -174,19 +194,20 @@ Format:
     writeToEditor(editor, prompt);
 
     if (!settings.autoSend) {
-      console.info("Auto-send disabled; prompt filled only.");
+      logInfo("Auto-send disabled; prompt filled only.");
       return;
     }
 
-    const delayMs =
-      typeof settings.sendDelayMs === "number" ? settings.sendDelayMs : 150;
+    const delayMs = Number.isFinite(settings.sendDelayMs)
+      ? Math.min(Math.max(settings.sendDelayMs, 0), 2000)
+      : 150;
     const sent = await attemptSend(delayMs, 2);
     if (sent) {
       await clearPending();
       return;
     }
 
-    console.warn("Gemini send button not ready; pending prompt retained.");
+    logWarn("Gemini send button not ready; pending prompt retained.");
   };
 
   const scheduleDelivery = (options) => {
@@ -197,7 +218,7 @@ Format:
     delivering = true;
     runDelivery(options)
       .catch((error) => {
-        console.warn("Failed to deliver Gemini prompt.", error);
+        logWarn("Failed to deliver Gemini prompt.", error);
       })
       .finally(() => {
         delivering = false;

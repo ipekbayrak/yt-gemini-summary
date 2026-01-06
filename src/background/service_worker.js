@@ -1,3 +1,4 @@
+const LOG_PREFIX = "[YT→Gemini]";
 const GEMINI_APP_URL = "https://gemini.google.com/app";
 const GEMINI_MATCH_PATTERN = "https://gemini.google.com/*";
 const PENDING_KEY = "pendingPrompt";
@@ -11,6 +12,9 @@ let activeDelivery = {
   timeoutId: null,
   listener: null,
 };
+
+const logInfo = (...args) => console.info(LOG_PREFIX, ...args);
+const logWarn = (...args) => console.warn(LOG_PREFIX, ...args);
 
 function uuidv4() {
   const bytes = new Uint8Array(16);
@@ -40,6 +44,7 @@ function isYoutubeUrl(rawUrl) {
       parsed.pathname.startsWith("/shorts")
     );
   } catch (error) {
+    logWarn("Invalid URL provided.", error);
     return false;
   }
 }
@@ -148,7 +153,7 @@ async function setPendingPrompt(pending) {
   try {
     await storageSet({ [PENDING_KEY]: pending });
   } catch (error) {
-    console.warn("Failed to persist pending prompt.", error);
+    logWarn("Failed to persist pending prompt.", error);
   }
 }
 
@@ -175,7 +180,7 @@ async function deliverPromptToGemini(tabId, requestId) {
       payload: { id: requestId },
     });
   } catch (error) {
-    console.warn("Failed to deliver prompt to Gemini tab.", error);
+    logWarn("Failed to deliver prompt to Gemini tab.", error);
   }
 }
 
@@ -185,12 +190,16 @@ function waitForTabComplete(tabId, requestId) {
   activeDelivery.tabId = tabId;
 
   const listener = (updatedTabId, changeInfo) => {
-    if (updatedTabId !== tabId) {
-      return;
-    }
-    if (changeInfo.status === "complete") {
-      clearActiveDelivery();
-      deliverPromptToGemini(tabId, requestId);
+    try {
+      if (updatedTabId !== tabId) {
+        return;
+      }
+      if (changeInfo.status === "complete") {
+        clearActiveDelivery();
+        deliverPromptToGemini(tabId, requestId);
+      }
+    } catch (error) {
+      logWarn("Failed to handle tab update.", error);
     }
   };
 
@@ -201,7 +210,7 @@ function waitForTabComplete(tabId, requestId) {
       clearActiveDelivery();
       return;
     }
-    console.warn("Gemini tab did not finish loading within timeout.");
+    logWarn("Gemini tab did not finish loading within timeout.");
     clearActiveDelivery();
   }, REQUEST_TIMEOUT_MS);
 }
@@ -225,12 +234,12 @@ async function openGeminiForPayload(payload) {
   try {
     tab = await getOrCreateGeminiTab();
   } catch (error) {
-    console.warn("Failed to open Gemini tab.", error);
+    logWarn("Failed to open Gemini tab.", error);
     return;
   }
 
   if (!tab?.id) {
-    console.warn("Gemini tab was not created.");
+    logWarn("Gemini tab was not created.");
     return;
   }
 
@@ -251,7 +260,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse?.({ ok: true });
     })
     .catch((error) => {
-      console.warn("Failed to handle OPEN_GEMINI message.", error);
+      logWarn("Failed to handle OPEN_GEMINI message.", error);
       sendResponse?.({ ok: false });
     });
 
@@ -260,38 +269,46 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 if (chrome.contextMenus) {
   chrome.runtime.onInstalled.addListener(() => {
-    chrome.contextMenus.removeAll(() => {
-      const error = chrome.runtime?.lastError;
-      if (error) {
-        console.warn("Failed to reset context menus.", error);
-      }
-      chrome.contextMenus.create(
-        {
-          id: MENU_ID,
-          title: "Summarize with Gemini",
-          contexts: ["link"],
-        },
-        () => {
-          const createError = chrome.runtime?.lastError;
-          if (createError) {
-            console.warn("Failed to create context menu.", createError);
-          }
+    try {
+      chrome.contextMenus.removeAll(() => {
+        const error = chrome.runtime?.lastError;
+        if (error) {
+          logWarn("Failed to reset context menus.", error);
         }
-      );
-    });
+        chrome.contextMenus.create(
+          {
+            id: MENU_ID,
+            title: "Summarize with Gemini",
+            contexts: ["link"],
+          },
+          () => {
+            const createError = chrome.runtime?.lastError;
+            if (createError) {
+              logWarn("Failed to create context menu.", createError);
+            }
+          }
+        );
+      });
+    } catch (error) {
+      logWarn("Failed to initialize context menus.", error);
+    }
   });
 
   chrome.contextMenus.onClicked.addListener((info) => {
-    if (info.menuItemId !== MENU_ID) {
-      return;
+    try {
+      if (info.menuItemId !== MENU_ID) {
+        return;
+      }
+      if (!isYoutubeUrl(info.linkUrl)) {
+        return;
+      }
+      openGeminiForPayload({ url: info.linkUrl, title: "", channel: "" });
+    } catch (error) {
+      logWarn("Failed to handle context menu click.", error);
     }
-    if (!isYoutubeUrl(info.linkUrl)) {
-      return;
-    }
-    openGeminiForPayload({ url: info.linkUrl, title: "", channel: "" });
   });
 } else {
-  console.warn("Context menus API not available.");
+  logInfo("Context menus API not available; permission not granted.");
 }
 
 chrome.commands?.onCommand?.addListener((command) => {
@@ -311,6 +328,6 @@ chrome.commands?.onCommand?.addListener((command) => {
       });
     })
     .catch((error) => {
-      console.warn("Failed to handle command.", error);
+      logWarn("Failed to handle command.", error);
     });
 });
