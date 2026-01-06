@@ -1,9 +1,12 @@
 # Test Checklist
 
-- [ ] YouTube home video kartı
-- [ ] YouTube search sonuçları
+## Manual test matrix
+- [ ] YouTube Home rich grid videos
+- [ ] Search results
+- [ ] Subscriptions feed
+- [ ] Watch page sidebar suggestions
 - [ ] Shorts shelf
-- [ ] Watch page öneriler
-- [ ] Gemini sign-in / signed-in
+- [ ] Gemini signed-in vs signed-out flows
 - [ ] AutoSend on/off
 - [ ] Hover-only on/off
+- [ ] Multiple quick clicks (pending overwrite behavior)

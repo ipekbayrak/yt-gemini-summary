@@ -1,15 +1,18 @@
 # Privacy Policy
 
-## Data Collection
-Bu eklenti hiçbir kişisel veri toplamaz.
+This extension does not collect personal data.
 
-## Storage
-Sadece `chrome.storage.local` kullanır (ayarlar ve bekleyen prompt).
+## What we do not do
+- No analytics.
+- No tracking.
+- No remote data collection.
 
-## Network
-Eklenti kendi başına ağ isteği yapmaz. YouTube ve Gemini bağlantıları,
-kullanıcının normal tarayıcı trafiği kapsamında gerçekleşir.
+## What is stored locally
+- Settings you configure.
+- Pending prompt data: URL, title, and channel (stored as `pendingPrompt`).
 
-## Processing
-Prompt içeriği sadece tarayıcı içinde işlenir; üçüncü taraf sunuculara
-aktarılmaz.
+## When data is sent
+- Data is sent only to Gemini through the user's browser when the user clicks the button.
+
+## Affiliation
+- This project is not affiliated with Google or YouTube.
