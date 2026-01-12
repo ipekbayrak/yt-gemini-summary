@@ -2,9 +2,20 @@
   const LOG_PREFIX = "[YT→Gemini]";
   const SETTINGS_KEY = "settings";
   const PENDING_KEY = "pendingPrompt";
-  const EDITOR_SELECTOR =
-    '.ql-editor.textarea.new-input-ui[contenteditable="true"]';
-  const SEND_BUTTON_SELECTOR = "button.send-button.submit";
+  const EDITOR_SELECTORS = [
+    '.ql-editor.textarea.new-input-ui[contenteditable="true"]',
+    '.ql-editor[contenteditable="true"]',
+    'div[contenteditable="true"][role="textbox"]',
+    'div[contenteditable="true"][aria-label*="prompt" i]',
+    'div[contenteditable="true"][aria-label*="message" i]',
+    'textarea[aria-label*="prompt" i]',
+    'textarea[placeholder*="prompt" i]',
+  ];
+  const SEND_BUTTON_SELECTORS = [
+    "button.send-button.submit",
+    'button[aria-label*="send" i]',
+    'button[type="submit"]',
+  ];
   const DEFAULT_PROMPT_TEMPLATE_TR = `Bu YouTube videosunu Türkçe özetle.
 Başlık: {title}
 Kanal: {channel}
@@ -104,6 +115,19 @@ URL: {url}
   const logInfo = (...args) => console.info(LOG_PREFIX, ...args);
   const logWarn = (...args) => console.warn(LOG_PREFIX, ...args);
 
+  const querySelectorFromList = (selectors) => {
+    for (const selector of selectors) {
+      const node = document.querySelector(selector);
+      if (node) {
+        return node;
+      }
+    }
+    return null;
+  };
+
+  const getEditorNode = () => querySelectorFromList(EDITOR_SELECTORS);
+  const getSendButton = () => querySelectorFromList(SEND_BUTTON_SELECTORS);
+
   const storageGet = (key) =>
     new Promise((resolve) => {
       if (!chrome?.storage?.local) {
@@ -191,11 +215,11 @@ URL: {url}
     return fragment;
   };
 
-  const waitForEditor = (attempts = 5, intervalMs = 300) =>
+  const waitForEditor = (attempts = 15, intervalMs = 400) =>
     new Promise((resolve) => {
       let remaining = attempts;
       const check = () => {
-        const editor = document.querySelector(EDITOR_SELECTOR);
+        const editor = getEditorNode();
         if (editor) {
           resolve(editor);
           return;
@@ -212,6 +236,19 @@ URL: {url}
 
   const writeToEditor = (editor, prompt) => {
     try {
+      if (
+        editor instanceof HTMLTextAreaElement ||
+        editor instanceof HTMLInputElement
+      ) {
+        editor.value = prompt;
+        editor.dispatchEvent(new Event("input", { bubbles: true }));
+        editor.dispatchEvent(new Event("change", { bubbles: true }));
+        return;
+      }
+      if (!(editor instanceof HTMLElement)) {
+        logWarn("Gemini editor element not supported.");
+        return;
+      }
       const fragment = buildPromptFragment(prompt);
       while (editor.firstChild) {
         editor.removeChild(editor.firstChild);
@@ -228,8 +265,11 @@ URL: {url}
     new Promise((resolve) => {
       const tryClick = (remaining) => {
         try {
-          const button = document.querySelector(SEND_BUTTON_SELECTOR);
-          if (button && button.getAttribute("aria-disabled") !== "true") {
+          const button = getSendButton();
+          const disabled =
+            button?.getAttribute?.("aria-disabled") === "true" ||
+            Boolean(button?.disabled);
+          if (button && !disabled) {
             button.click();
             resolve(true);
             return;

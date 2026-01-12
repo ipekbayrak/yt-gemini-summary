@@ -4,13 +4,24 @@
     "ytd-rich-item-renderer",
     "ytd-video-renderer",
     "ytd-grid-video-renderer",
-    "ytm-shorts-lockup-view-model",
     "ytm-shorts-lockup-view-model-v2",
+    "yt-lockup-view-model",
+    "ytd-compact-video-renderer",
+    "ytd-playlist-panel-video-renderer",
   ].join(",");
+  const WATCH_ACTIONS_SELECTORS = [
+    "ytd-watch-metadata #actions-inner ytd-menu-renderer #top-level-buttons-computed",
+    "ytd-watch-metadata ytd-menu-renderer #top-level-buttons-computed",
+    "ytd-watch-metadata #top-level-buttons-computed",
+  ];
+  const WATCH_ACTIONS_FALLBACK_SELECTOR = "ytd-watch-metadata #actions-inner";
   const BUTTON_CLASS = "gemini-summary-btn";
   const CARD_CLASS = "gemini-summary-card";
+  const WATCH_BUTTON_CLASS = "gemini-summary-watch-btn";
+  const WATCH_CONTAINER_CLASS = "gemini-summary-watch-container";
   const DATASET_FLAG = "geminiSummaryInjected";
   const SETTINGS_KEY = "settings";
+  const INVALIDATION_TITLE = "Reload the page to re-enable the extension.";
   const LABELS = {
     en: "🤖 Summarize with Gemini",
     es: "🤖 Resumir con Gemini",
@@ -22,6 +33,73 @@
 
   const logWarn = (...args) => console.warn(LOG_PREFIX, ...args);
   const logError = (...args) => console.error(LOG_PREFIX, ...args);
+  let extensionAvailable = true;
+
+  const getErrorMessage = (error) => {
+    if (!error) {
+      return "";
+    }
+    if (typeof error === "string") {
+      return error;
+    }
+    if (typeof error.message === "string") {
+      return error.message;
+    }
+    try {
+      return String(error);
+    } catch (stringifyError) {
+      return "";
+    }
+  };
+
+  const isExtensionContextInvalidated = (error) => {
+    const message = getErrorMessage(error).toLowerCase();
+    return (
+      message.includes("extension context invalidated") ||
+      message.includes("context invalidated") ||
+      message.includes("message port closed")
+    );
+  };
+
+  const disableButton = (button) => {
+    if (!(button instanceof HTMLButtonElement)) {
+      return;
+    }
+    button.disabled = true;
+    if (button.classList.contains(WATCH_BUTTON_CLASS)) {
+      button.classList.add(`${WATCH_BUTTON_CLASS}--disabled`);
+    } else {
+      button.classList.add(`${BUTTON_CLASS}--disabled`);
+    }
+    button.setAttribute("aria-disabled", "true");
+    button.setAttribute("title", INVALIDATION_TITLE);
+  };
+
+  const disableAllButtons = () => {
+    document
+      .querySelectorAll(`.${BUTTON_CLASS}, .${WATCH_BUTTON_CLASS}`)
+      .forEach((button) => disableButton(button));
+  };
+
+  const markExtensionUnavailable = () => {
+    if (!extensionAvailable) {
+      return;
+    }
+    extensionAvailable = false;
+    disableAllButtons();
+    logWarn("Extension context invalidated; reload the page to re-enable.");
+  };
+
+  const canUseRuntime = () => {
+    if (!extensionAvailable) {
+      return false;
+    }
+    try {
+      return Boolean(chrome?.runtime?.id && chrome.runtime.sendMessage);
+    } catch (error) {
+      return false;
+    }
+  };
 
   const getChromeLanguage = () => {
     try {
@@ -57,7 +135,9 @@
 
   const updateButtonLabels = (language) => {
     const label = getButtonLabel(language);
-    document.querySelectorAll(`.${BUTTON_CLASS}`).forEach((button) => {
+    document
+      .querySelectorAll(`.${BUTTON_CLASS}, .${WATCH_BUTTON_CLASS}`)
+      .forEach((button) => {
       if (!(button instanceof HTMLElement)) {
         return;
       }
@@ -129,6 +209,17 @@
     } catch (error) {
       logWarn("Failed to toggle hover mode.", error);
     }
+  };
+
+  const hasInjectedAncestor = (card) => {
+    let ancestor = card.parentElement;
+    while (ancestor) {
+      if (ancestor.dataset?.[DATASET_FLAG] === "true") {
+        return true;
+      }
+      ancestor = ancestor.parentElement;
+    }
+    return false;
   };
 
   const extractUrl = (card) => {
@@ -214,11 +305,111 @@
     return "";
   };
 
+  const isWatchPage = () =>
+    window.location.pathname.startsWith("/watch") ||
+    Boolean(document.querySelector("ytd-watch-metadata"));
+
+  const extractWatchTitle = () => {
+    const selectors = [
+      "ytd-watch-metadata h1 yt-formatted-string",
+      "ytd-watch-metadata h1",
+      "ytd-watch-metadata #title yt-formatted-string",
+      "ytd-watch-metadata #title",
+    ];
+    for (const selector of selectors) {
+      const node = document.querySelector(selector);
+      const text = node?.textContent?.trim();
+      if (text) {
+        return text;
+      }
+    }
+
+    const meta =
+      document.querySelector('meta[name="title"]') ||
+      document.querySelector('meta[property="og:title"]');
+    const metaTitle = meta?.getAttribute("content")?.trim();
+    if (metaTitle) {
+      return metaTitle;
+    }
+
+    const fallback = document.title.replace(/\s*-\s*YouTube\s*$/, "").trim();
+    return fallback || "";
+  };
+
+  const extractWatchChannel = () => {
+    const selectors = [
+      "ytd-watch-metadata #owner #channel-name a",
+      "ytd-watch-metadata ytd-channel-name a",
+      "ytd-video-owner-renderer #channel-name a",
+      "ytd-video-owner-renderer ytd-channel-name a",
+      "ytd-watch-metadata #channel-name",
+      "ytd-video-owner-renderer #channel-name",
+    ];
+    for (const selector of selectors) {
+      const node = document.querySelector(selector);
+      const text = node?.textContent?.trim();
+      if (text) {
+        return text;
+      }
+    }
+    return "";
+  };
+
   const buildPayload = (card) => ({
     url: extractUrl(card),
     title: extractTitle(card),
     channel: extractChannel(card),
   });
+
+  const buildWatchPayload = () => {
+    let url = "";
+    try {
+      const parsed = new URL(window.location.href);
+      url = `${parsed.origin}${parsed.pathname}${parsed.search}`;
+    } catch (error) {
+      url = window.location.href || "";
+    }
+    return {
+      url,
+      title: extractWatchTitle(),
+      channel: extractWatchChannel(),
+    };
+  };
+
+  const getWatchActionsContainer = () => {
+    for (const selector of WATCH_ACTIONS_SELECTORS) {
+      const node = document.querySelector(selector);
+      if (node) {
+        return node;
+      }
+    }
+
+    const menu = document.querySelector("ytd-watch-metadata ytd-menu-renderer");
+    if (menu) {
+      const root = menu.shadowRoot || menu.renderRoot || menu;
+      const node = root?.querySelector?.("#top-level-buttons-computed");
+      if (node) {
+        return node;
+      }
+    }
+
+    const actionsInner = document.querySelector(WATCH_ACTIONS_FALLBACK_SELECTOR);
+    if (!actionsInner) {
+      return null;
+    }
+    let container = actionsInner.querySelector(`.${WATCH_CONTAINER_CLASS}`);
+    if (!container) {
+      container = document.createElement("div");
+      container.className = WATCH_CONTAINER_CLASS;
+      const menuContainer = actionsInner.querySelector("#menu");
+      if (menuContainer) {
+        actionsInner.insertBefore(container, menuContainer);
+      } else {
+        actionsInner.prepend(container);
+      }
+    }
+    return container;
+  };
 
   const createButton = (card) => {
     if (card.dataset[DATASET_FLAG] === "true") {
@@ -226,6 +417,9 @@
     }
     if (card.querySelector(`.${BUTTON_CLASS}`)) {
       card.dataset[DATASET_FLAG] = "true";
+      return;
+    }
+    if (hasInjectedAncestor(card)) {
       return;
     }
 
@@ -251,13 +445,33 @@
         if (!payload.url) {
           return;
         }
-        chrome.runtime?.sendMessage?.({ type: "OPEN_GEMINI", payload }, () => {
-          const error = chrome.runtime?.lastError;
-          if (error) {
-            logWarn("Failed to send OPEN_GEMINI message.", error);
+        if (!canUseRuntime()) {
+          markExtensionUnavailable();
+          return;
+        }
+        try {
+          chrome.runtime.sendMessage({ type: "OPEN_GEMINI", payload }, () => {
+            const error = chrome.runtime?.lastError;
+            if (error) {
+              if (isExtensionContextInvalidated(error)) {
+                markExtensionUnavailable();
+                return;
+              }
+              logWarn("Failed to send OPEN_GEMINI message.", error);
+            }
+          });
+        } catch (error) {
+          if (isExtensionContextInvalidated(error)) {
+            markExtensionUnavailable();
+            return;
           }
-        });
+          throw error;
+        }
       } catch (error) {
+        if (isExtensionContextInvalidated(error)) {
+          markExtensionUnavailable();
+          return;
+        }
         logError("Failed to handle summary click.", error);
       }
     });
@@ -267,37 +481,125 @@
     card.dataset[DATASET_FLAG] = "true";
   };
 
-  const scanCards = () => {
-    try {
-      document.querySelectorAll(CARD_SELECTORS).forEach((card) => {
-        if (!(card instanceof HTMLElement)) {
+  const createWatchButton = (actions) => {
+    if (!(actions instanceof HTMLElement)) {
+      return;
+    }
+    if (actions.querySelector(`.${WATCH_BUTTON_CLASS}`)) {
+      return;
+    }
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = WATCH_BUTTON_CLASS;
+    const label = getButtonLabel(currentLanguage);
+    button.textContent = label;
+    button.setAttribute("aria-label", label);
+    button.setAttribute("title", label);
+    button.addEventListener("click", (event) => {
+      try {
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.stopImmediatePropagation) {
+          event.stopImmediatePropagation();
+        }
+        const payload = buildWatchPayload();
+        if (!payload.url) {
           return;
         }
-        if (card.dataset[DATASET_FLAG] === "true") {
+        if (!canUseRuntime()) {
+          markExtensionUnavailable();
           return;
+        }
+        try {
+          chrome.runtime.sendMessage({ type: "OPEN_GEMINI", payload }, () => {
+            const error = chrome.runtime?.lastError;
+            if (error) {
+              if (isExtensionContextInvalidated(error)) {
+                markExtensionUnavailable();
+                return;
+              }
+              logWarn("Failed to send OPEN_GEMINI message.", error);
+            }
+          });
+        } catch (error) {
+          if (isExtensionContextInvalidated(error)) {
+            markExtensionUnavailable();
+            return;
+          }
+          throw error;
+        }
+      } catch (error) {
+        if (isExtensionContextInvalidated(error)) {
+          markExtensionUnavailable();
+          return;
+        }
+        logError("Failed to handle summary click.", error);
+      }
+    });
+
+    actions.prepend(button);
+  };
+
+  const scanCards = () => {
+    if (!extensionAvailable) {
+      return;
+    }
+    try {
+      const cards = Array.from(document.querySelectorAll(CARD_SELECTORS));
+      for (let index = cards.length - 1; index >= 0; index -= 1) {
+        const card = cards[index];
+        if (!(card instanceof HTMLElement)) {
+          continue;
+        }
+        if (card.dataset[DATASET_FLAG] === "true") {
+          continue;
         }
         if (card.querySelector(`.${BUTTON_CLASS}`)) {
           card.dataset[DATASET_FLAG] = "true";
-          return;
+          continue;
+        }
+        if (hasInjectedAncestor(card)) {
+          continue;
         }
         const url = extractUrl(card);
         if (!url) {
-          return;
+          continue;
         }
         createButton(card);
-      });
+      }
     } catch (error) {
       logWarn("Failed to scan YouTube cards.", error);
     }
   };
 
-  const scheduleScan = throttle(scanCards, THROTTLE_MS);
+  const scanWatchButton = () => {
+    if (!extensionAvailable) {
+      return;
+    }
+    if (!isWatchPage()) {
+      return;
+    }
+    const actions = getWatchActionsContainer();
+    if (!actions) {
+      return;
+    }
+    createWatchButton(actions);
+  };
+
+  const scanAll = () => {
+    scanCards();
+    scanWatchButton();
+  };
+
+  const scheduleScan = throttle(scanAll, THROTTLE_MS);
   const observer = new MutationObserver(() => scheduleScan());
   try {
     observer.observe(document.documentElement, { childList: true, subtree: true });
   } catch (error) {
     logWarn("Failed to observe DOM mutations.", error);
   }
+  window.addEventListener("yt-navigate-finish", scheduleScan);
+  window.addEventListener("yt-page-data-updated", scheduleScan);
 
   getSettings()
     .then((settings) => {

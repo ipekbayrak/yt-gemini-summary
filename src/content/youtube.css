@@ -23,6 +23,13 @@
   background: #1669c5;
 }
 
+.gemini-summary-btn--disabled,
+.gemini-summary-btn--disabled:hover {
+  background: #9aa0a6;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .gemini-hover-only .gemini-summary-card .gemini-summary-btn {
   opacity: 0;
   pointer-events: none;
@@ -31,4 +38,63 @@
 .gemini-hover-only .gemini-summary-card:hover .gemini-summary-btn {
   opacity: 1;
   pointer-events: auto;
+}
+
+.gemini-summary-watch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  margin-right: 8px;
+  border: none;
+  border-radius: 18px;
+  background-color: var(--yt-spec-button-chip-background, #f2f2f2);
+  color: var(--yt-spec-text-primary, #0f0f0f);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.gemini-summary-watch-btn:hover {
+  background-color: var(--yt-spec-button-chip-background-hover, #e6e6e6);
+}
+
+.gemini-summary-watch-btn--disabled,
+.gemini-summary-watch-btn--disabled:hover {
+  background-color: var(--yt-spec-button-chip-background-disabled, #e0e0e0);
+  color: var(--yt-spec-text-secondary, #606060);
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
+.gemini-summary-watch-container {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+}
+
+html[dark] .gemini-summary-watch-btn,
+ytd-app[dark] .gemini-summary-watch-btn {
+  background-color: var(--yt-spec-button-chip-background, rgba(255, 255, 255, 0.12));
+  color: var(--yt-spec-text-primary, #fff);
+}
+
+html[dark] .gemini-summary-watch-btn:hover,
+ytd-app[dark] .gemini-summary-watch-btn:hover {
+  background-color: var(--yt-spec-button-chip-background-hover, rgba(255, 255, 255, 0.2));
+}
+
+html[dark] .gemini-summary-watch-btn--disabled,
+html[dark] .gemini-summary-watch-btn--disabled:hover,
+ytd-app[dark] .gemini-summary-watch-btn--disabled,
+ytd-app[dark] .gemini-summary-watch-btn--disabled:hover {
+  background-color: var(
+    --yt-spec-button-chip-background-disabled,
+    rgba(255, 255, 255, 0.08)
+  );
+  color: var(--yt-spec-text-secondary, rgba(255, 255, 255, 0.6));
 }
