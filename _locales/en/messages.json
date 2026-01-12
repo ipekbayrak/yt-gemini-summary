@@ -1,6 +1,8 @@
 {
   "appName": { "message": "YouTube → Gemini Summary" },
-  "appDescription": { "message": "Summarize YouTube videos with Gemini." },
+  "appDescription": {
+    "message": "Summarize YouTube videos in Gemini with one click."
+  },
   "optionsTitle": { "message": "YouTube → Gemini Summary Options" },
   "optionsHeading": { "message": "YouTube → Gemini Summary" },
   "optionsSubtitle": {
