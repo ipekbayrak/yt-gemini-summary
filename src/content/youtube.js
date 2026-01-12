@@ -411,6 +411,23 @@
     return container;
   };
 
+  const reconcileWatchButtons = (actions) => {
+    const buttons = Array.from(
+      document.querySelectorAll(`.${WATCH_BUTTON_CLASS}`)
+    );
+    if (buttons.length === 0) {
+      return null;
+    }
+    const primary = buttons[0];
+    for (let index = 1; index < buttons.length; index += 1) {
+      buttons[index].remove();
+    }
+    if (actions && !actions.contains(primary)) {
+      actions.prepend(primary);
+    }
+    return primary;
+  };
+
   const createButton = (card) => {
     if (card.dataset[DATASET_FLAG] === "true") {
       return;
@@ -485,7 +502,7 @@
     if (!(actions instanceof HTMLElement)) {
       return;
     }
-    if (actions.querySelector(`.${WATCH_BUTTON_CLASS}`)) {
+    if (reconcileWatchButtons(actions)) {
       return;
     }
     const button = document.createElement("button");
