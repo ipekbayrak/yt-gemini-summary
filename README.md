@@ -1,6 +1,6 @@
 # YouTube → Gemini Summary (Chrome Extension)
 
-Status: Production ready (v0.1.2)
+Status: Production ready (v0.1.3)
 
 ## What it does
 - Adds “🤖 Gemini ile özetle” button on YouTube video + Shorts cards.
