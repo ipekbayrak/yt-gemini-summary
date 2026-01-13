@@ -6,7 +6,15 @@
 - Re-run manual checks in [TEST_CHECKLIST.md](TEST_CHECKLIST.md).
 - Ensure docs are up to date (README/PRIVACY/RELEASE).
 
-## Build a Chrome Web Store zip
+## Build extension zips (Chrome/Firefox/Opera)
+- Run `npm run build` (or `node scripts/build.js`).
+- Outputs land in `dist/`:
+  - `yt-gemini-summary-chrome-vX.Y.Z.zip`
+  - `yt-gemini-summary-firefox-vX.Y.Z.zip`
+  - `yt-gemini-summary-opera-vX.Y.Z.zip`
+- Optional: set `FIREFOX_EXTENSION_ID` to embed a fixed Gecko ID.
+
+## Manual zip (fallback)
 Include:
 - `manifest.json`
 - `src/`

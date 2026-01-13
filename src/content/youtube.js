@@ -19,7 +19,9 @@
   const CARD_CLASS = "gemini-summary-card";
   const WATCH_BUTTON_CLASS = "gemini-summary-watch-btn";
   const WATCH_CONTAINER_CLASS = "gemini-summary-watch-container";
+  const BUTTON_VISIBLE_CLASS = "gemini-summary-btn--visible";
   const DATASET_FLAG = "geminiSummaryInjected";
+  const HOVER_BOUND_FLAG = "geminiSummaryHoverBound";
   const SETTINGS_KEY = "settings";
   const INVALIDATION_TITLE = "Reload the page to re-enable the extension.";
   const LABELS = {
@@ -223,11 +225,11 @@
   };
 
   const extractUrl = (card) => {
-    const anchor = card.querySelector('a[href^="/watch"], a[href^="/shorts"]');
+    const anchor = findVideoAnchor(card);
     if (!anchor) {
       return "";
     }
-    const href = anchor.getAttribute("href");
+    const href = anchor.getAttribute("href") || anchor.href;
     if (!href) {
       return "";
     }
@@ -265,9 +267,7 @@
       }
     }
 
-    const fallbackAnchor = card.querySelector(
-      'a[href^="/watch"], a[href^="/shorts"]'
-    );
+    const fallbackAnchor = findVideoAnchor(card);
     if (fallbackAnchor) {
       const titleAttr = fallbackAnchor.getAttribute("title");
       if (titleAttr?.trim()) {
@@ -280,6 +280,39 @@
 
     return "";
   };
+
+  const isVideoPath = (href) => {
+    if (!href) {
+      return false;
+    }
+    try {
+      const url = new URL(href, window.location.origin);
+      return (
+        url.pathname.startsWith("/watch") || url.pathname.startsWith("/shorts")
+      );
+    } catch (error) {
+      return false;
+    }
+  };
+
+  const findVideoAnchorInRoot = (root) => {
+    if (!root?.querySelectorAll) {
+      return null;
+    }
+    const anchors = root.querySelectorAll("a[href]");
+    for (const anchor of anchors) {
+      const href = anchor.getAttribute("href") || anchor.href;
+      if (isVideoPath(href)) {
+        return anchor;
+      }
+    }
+    return null;
+  };
+
+  const findVideoAnchor = (card) =>
+    findVideoAnchorInRoot(card) ||
+    findVideoAnchorInRoot(card?.shadowRoot) ||
+    findVideoAnchorInRoot(card?.renderRoot);
 
   const extractChannel = (card) => {
     const channelAnchor =
@@ -495,6 +528,7 @@
 
     card.classList.add(CARD_CLASS);
     card.appendChild(button);
+    attachCardHoverHandlers(card, button);
     card.dataset[DATASET_FLAG] = "true";
   };
 
@@ -569,10 +603,16 @@
           continue;
         }
         if (card.dataset[DATASET_FLAG] === "true") {
+          const existingButton = card.querySelector(`.${BUTTON_CLASS}`);
+          if (existingButton instanceof HTMLButtonElement) {
+            attachCardHoverHandlers(card, existingButton);
+          }
           continue;
         }
-        if (card.querySelector(`.${BUTTON_CLASS}`)) {
+        const existingButton = card.querySelector(`.${BUTTON_CLASS}`);
+        if (existingButton instanceof HTMLButtonElement) {
           card.dataset[DATASET_FLAG] = "true";
+          attachCardHoverHandlers(card, existingButton);
           continue;
         }
         if (hasInjectedAncestor(card)) {
@@ -601,6 +641,38 @@
       return;
     }
     createWatchButton(actions);
+  };
+
+  const attachCardHoverHandlers = (card, button) => {
+    if (!(card instanceof HTMLElement)) {
+      return;
+    }
+    if (!(button instanceof HTMLButtonElement)) {
+      return;
+    }
+    if (card.dataset[HOVER_BOUND_FLAG] === "true") {
+      return;
+    }
+    card.dataset[HOVER_BOUND_FLAG] = "true";
+    const getButton = () => card.querySelector(`.${BUTTON_CLASS}`);
+    const show = () => {
+      const activeButton = getButton();
+      if (activeButton instanceof HTMLButtonElement) {
+        activeButton.classList.add(BUTTON_VISIBLE_CLASS);
+      }
+    };
+    const hide = (event) => {
+      const related = event.relatedTarget;
+      if (related instanceof Node && card.contains(related)) {
+        return;
+      }
+      const activeButton = getButton();
+      if (activeButton instanceof HTMLButtonElement) {
+        activeButton.classList.remove(BUTTON_VISIBLE_CLASS);
+      }
+    };
+    card.addEventListener("mouseover", show);
+    card.addEventListener("mouseout", hide);
   };
 
   const scanAll = () => {

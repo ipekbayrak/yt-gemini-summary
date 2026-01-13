@@ -40,6 +40,11 @@
   pointer-events: auto;
 }
 
+.gemini-hover-only .gemini-summary-card .gemini-summary-btn--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .gemini-summary-watch-btn {
   display: inline-flex;
   align-items: center;
